@@ -1,7 +1,7 @@
 
 const express = require("express")
 const Product = require("../models/Product")
-const {verifyToken, verifyTokenAndAuthorization, verifyTokenAndAdmin} = require("./verifyToken")
+const {verifyTokenAndAdmin} = require("./verifyToken")
 
 const router = express.Router();
 
@@ -45,60 +45,39 @@ router.delete("/:id", verifyTokenAndAdmin, async(req,res)=>{
 //GET PRODUCT
 router.get("/find/:id", async(req,res)=>{
     try{
-       const User = await Product.findById(req.params.id);
-       const {password, ...others} = User._doc;
-       res.status(200).json(others)
+       const product = await Product.findById(req.params.id);
+       res.status(200).json(product)
     }catch(err){
      res.status(500).json(err)
     }
 })
 
-
-
-
-
-
-
-
-
-
-//GET ALL USER
-router.get("/", verifyTokenAndAdmin, async(req,res)=>{
-    const query = req.query.new
+//GET ALL PRODUCT
+router.get("/", async(req,res)=>{
+    const qNew = req.query.new
+    const qCategory = req.query.category
     try{
-       const Users = query
-       ? await User.find().sort({_id:-1}).limit(5) 
-       :  await User.find();
-       res.status(200).json(Users)
-    }catch(err){
-     res.status(500).json(err)
-    }
-})
-//GET USER STATS
-router.get("/stats", verifyTokenAndAdmin, async(req,res)=>{
-    const date = new Date();
-    const lastYear = new Date(date.setFullYear(date.getFullYear()-1))
-    try{
-        const data = await User.aggregate([
-            { $math: {createdAt: {$gte: lastYear}} },
-            {
-                $project:{
-                    month: { $month: "$createdAt" },
-                },
-            },
-            {
-                $group:{
-                    _id: "$month",
-                    total: {$sum: 1},
-                }
-            }
-        ])
+      let products;
 
-       res.status(200).json(data)
+      if(qNew){
+        products = await Product.find().sort({createdAt: -1}).limit(1) 
+      }else if(qCategory){
+        products = await Product.find({
+            categories :{
+            $in: [qCategory]
+        },
+    });
+      }else{
+        products = await Product.find();
+      }
+
+       res.status(200).json(products)
     }catch(err){
      res.status(500).json(err)
     }
 })
+
+
 
 module.exports = router;
 

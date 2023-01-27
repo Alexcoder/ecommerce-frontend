@@ -38,8 +38,8 @@ router.delete("/:id", verifyTokenAndAuthorization, async(req,res)=>{
 //GET
 router.get("/find/:id", verifyTokenAndAdmin, async(req,res)=>{
     try{
-       const User = await User.findById(req.params.id);
-       const {password, ...others} = User._doc;
+       const user = await User.findById(req.params.id);
+       const {password, ...others} = user._doc;
        res.status(200).json(others)
     }catch(err){
      res.status(500).json(err)
@@ -64,7 +64,7 @@ router.get("/stats", verifyTokenAndAdmin, async(req,res)=>{
     const lastYear = new Date(date.setFullYear(date.getFullYear()-1))
     try{
         const data = await User.aggregate([
-            { $math: {createdAt: {$gte: lastYear}} },
+            { $match: {createdAt: {$gte: lastYear}} },
             {
                 $project:{
                     month: { $month: "$createdAt" },
